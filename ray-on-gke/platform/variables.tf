@@ -15,7 +15,7 @@
 variable "project_id" {
   type        = string
   description = "GCP project id"
-  default     = "<your project>"
+  default     = "ricliu-gke-dev"
 }
 
 variable "region" {
@@ -27,11 +27,11 @@ variable "region" {
 variable "cluster_name" {
   type        = string
   description = "GKE cluster name"
-  default     = "ml-cluster"
+  default     = "ml-autopilo"
 }
 
 variable "enable_autopilot" {
   type        = bool
   description = "Set to true to enable GKE Autopilot clusters"
-  default     = false
+  default     = true
 }

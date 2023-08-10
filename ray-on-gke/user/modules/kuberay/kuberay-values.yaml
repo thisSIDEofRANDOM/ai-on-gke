@@ -22,7 +22,7 @@
 image:
   # Replace this with your own image if needed.
   repository: rayproject/ray
-  tag: 2.3.0-py310-gpu
+  tag: 2.5.0-gpu
   pullPolicy: IfNotPresent
 
 nameOverride: "kuberay"
@@ -83,19 +83,16 @@ head:
   resources:
     limits:
       cpu: "8"
-      nvidia.com/gpu: "1"
       # To avoid out-of-memory issues, never allocate less than 2G memory for the Ray head.
       memory: "20G"
       ephemeral-storage: 20Gi
     requests:
       cpu: "8"
-      nvidia.com/gpu: "1"
       memory: "20G"
       ephemeral-storage: 10Gi
   annotations: {}
   nodeSelector:
     iam.gke.io/gke-metadata-server-enabled: "true"
-    cloud.google.com/gke-accelerator: "nvidia-tesla-a100"
   tolerations: []
   affinity: {}
   # Ray container security context.
@@ -134,7 +131,7 @@ head:
 worker:
   # If you want to disable the default workergroup
   # uncomment the line below
-  # disabled: true
+  disabled: true
   groupName: workergroup
   replicas: 0
   type: worker
@@ -221,17 +218,14 @@ worker:
 additionalWorkerGroups:
   smallGroup:
     # Disabled by default
-    disabled: true
-    replicas: 1
-    minReplicas: 1
-    maxReplicas: 3
+    disabled: false
+    replicas: 0 
+    minReplicas: 0
+    maxReplicas: 10
     type: worker
     labels: {}
     rayStartParams:
       block: 'true'
-    initContainerImage: 'busybox:1.28'  # Enable users to specify the image for init container. Users can pull the busybox image from their private repositories.
-    # Security context for the init container.
-    initContainerSecurityContext: {}
   # containerEnv specifies environment variables for the Ray container,
   # Follows standard K8s container env schema.
     containerEnv: []
@@ -266,13 +260,35 @@ additionalWorkerGroups:
     # Ray container security context.
     securityContext: {}
     volumes:
-      - name: log-volume
+      - name: ray-logs
         emptyDir: {}
-  # Ray writes logs to /tmp/ray/session_latests/logs
+      - name: fluentbit-config
+        configMap:
+          name: fluentbit-config
+    # Ray writes logs to /tmp/ray/session_latests/logs
     volumeMounts:
       - mountPath: /tmp/ray
-        name: log-volume
-    sidecarContainers: []
+        name: ray-logs
+    # sidecarContainers specifies additional containers to attach to the Ray pod.
+    # Follows standard K8s container spec.
+    sidecarContainers:
+      - name: fluentbit
+        image: fluent/fluent-bit:1.9.6
+        # These resource requests for Fluent Bit should be sufficient in production.
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+            ephemeral-storage: 2Gi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+            ephemeral-storage: 4Gi
+        volumeMounts:
+        - mountPath: /tmp/ray
+          name: ray-logs
+        - mountPath: /fluent-bit/etc/
+          name: fluentbit-config
 
 service:
   type: ClusterIP
