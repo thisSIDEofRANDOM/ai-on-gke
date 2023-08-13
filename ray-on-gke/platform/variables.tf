@@ -27,7 +27,7 @@ variable "region" {
 variable "cluster_name" {
   type        = string
   description = "GKE cluster name"
-  default     = "ml-autopilo"
+  default     = "ml-autopilot"
 }
 
 variable "enable_autopilot" {

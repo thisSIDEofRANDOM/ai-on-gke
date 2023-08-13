@@ -36,24 +36,24 @@ head:
   # If enableInTreeAutoscaling is true, the autoscaler sidecar will be added to the Ray head pod.
   # Ray autoscaler integration is supported only for Ray versions >= 1.11.0
   # Ray autoscaler integration is Beta with KubeRay >= 0.3.0 and Ray >= 2.0.0.
-  # enableInTreeAutoscaling: true
+  enableInTreeAutoscaling: true
   # autoscalerOptions is an OPTIONAL field specifying configuration overrides for the Ray autoscaler.
   # The example configuration shown below below represents the DEFAULT values.
-  # autoscalerOptions:
-    # upscalingMode: Default
-    # idleTimeoutSeconds: 60
-    # securityContext: {}
-    # env: []
-    # envFrom: []
+  autoscalerOptions:
+    upscalingMode: Default
+    idleTimeoutSeconds: 60
+    securityContext: {}
+    env: []
+    envFrom: []
     # resources specifies optional resource request and limit overrides for the autoscaler container.
     # For large Ray clusters, we recommend monitoring container resource usage to determine if overriding the defaults is required.
-    # resources:
-    #   limits:
-    #     cpu: "500m"
-    #     memory: "512Mi"
-    #   requests:
-    #     cpu: "500m"
-    #     memory: "512Mi"
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+      requests:
+        cpu: "500m"
+        memory: "512Mi"
   labels:
     cloud.google.com/gke-ray-node-type: head
   rayStartParams:
@@ -82,12 +82,12 @@ head:
   # for further guidance.
   resources:
     limits:
-      cpu: "8"
+      cpu: "1"
       # To avoid out-of-memory issues, never allocate less than 2G memory for the Ray head.
       memory: "20G"
       ephemeral-storage: 20Gi
     requests:
-      cpu: "8"
+      cpu: "1"
       memory: "20G"
       ephemeral-storage: 10Gi
   annotations: {}
@@ -248,10 +248,10 @@ additionalWorkerGroups:
     resources:
       limits:
         cpu: 1
-        memory: "1G"
+        memory: "20G"
       requests:
         cpu: 1
-        memory: "1G"
+        memory: "20G"
     annotations:
       key: value
     nodeSelector: {}
@@ -321,12 +321,12 @@ additionalWorkerGroups:
   # for further guidance.
     resources:
       limits:
-        cpu: "1"
+        cpu: "8"
         nvidia.com/gpu: "1"
         memory: "20G"
         ephemeral-storage: 20Gi
       requests:
-        cpu: "1"
+        cpu: "8"
         nvidia.com/gpu: "1"
         memory: "20G"
         ephemeral-storage: 10Gi
@@ -334,7 +334,7 @@ additionalWorkerGroups:
       key: value
     nodeSelector:
       iam.gke.io/gke-metadata-server-enabled: "true"
-      cloud.google.com/gke-accelerator: "nvidia-tesla-a100"
+      cloud.google.com/gke-accelerator: "nvidia-tesla-t4"
     tolerations: []
     affinity: {}
     # Ray container security context.
@@ -371,4 +371,4 @@ additionalWorkerGroups:
           name: fluentbit-config
           
 service:
-  type: ClusterIP
+  type: LoadBalancer 
