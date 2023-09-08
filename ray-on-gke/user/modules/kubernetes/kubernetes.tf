@@ -19,6 +19,7 @@ data "local_file" "fluentd_config_yaml" {
 resource "kubernetes_namespace" "ml" {
   metadata {
     name = var.namespace
+    ###labels = { "istio-injection": "enabled" }
   }
 }
 

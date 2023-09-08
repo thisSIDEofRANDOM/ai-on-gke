@@ -38,7 +38,7 @@ variable "namespace" {
 
 variable "num_gpu_nodes" {
   description = "Number of GPU nodes in the cluster"
-  default     = 1
+  default     = 0 
 }
 
 variable "enable_autopilot" {

@@ -21,17 +21,17 @@ variable "project_id" {
 variable "region" {
   type        = string
   description = "GCP project region or zone"
-  default     = "us-central1"
+  default     = "us-central1-a"
 }
 
 variable "cluster_name" {
   type        = string
   description = "GKE cluster name"
-  default     = "ml-autopilot"
+  default     = "ray-deep-dive-cluster"
 }
 
 variable "enable_autopilot" {
   type        = bool
   description = "Set to true to enable GKE Autopilot clusters"
-  default     = true
+  default     = false
 }
