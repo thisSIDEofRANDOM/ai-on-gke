@@ -25,6 +25,7 @@ image:
   tag: 2.3.0-py310-gpu
   pullPolicy: IfNotPresent
 
+restartPolicy: Never
 nameOverride: "kuberay"
 fullnameOverride: ""
 
@@ -125,7 +126,7 @@ head:
     #- mountPath: /tmp/ray
       #name: ray-logs
     - name: gcs-fuse-csi-static
-      mountPath: /tmp/ray
+      mountPath: /tmp/ray/session_latest/logs
       #readOnly: true
     #- name: gcs-fuse-csi-ephemeral
       #readOnly: true

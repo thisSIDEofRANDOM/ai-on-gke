@@ -18,6 +18,8 @@ spec:
     - debug_fuse_errors
     - debug_fuse
     - debug_gcs
+    - dir-mode=777
+    - file-mode=777
   csi:
     driver: gcsfuse.csi.storage.gke.io
     volumeHandle: ray-logs
