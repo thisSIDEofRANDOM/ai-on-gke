@@ -31,6 +31,9 @@ fullnameOverride: ""
 imagePullSecrets: []
   # - name: an-existing-secret
 
+annotations:
+  gke-gcsfuse/volumes: "true"
+
 head:
   groupName: headgroup
   # If enableInTreeAutoscaling is true, the autoscaler sidecar will be added to the Ray head pod.
@@ -92,7 +95,8 @@ head:
       nvidia.com/gpu: "1"
       memory: "20G"
       ephemeral-storage: 10Gi
-  annotations: {}
+  annotations:
+    gke-gcsfuse/volumes: "true"
   nodeSelector:
     iam.gke.io/gke-metadata-server-enabled: "true"
     cloud.google.com/gke-accelerator: "nvidia-tesla-t4"
@@ -101,15 +105,32 @@ head:
   # Ray container security context.
   securityContext: {}
   volumes:
-    - name: ray-logs
-      emptyDir: {}
+    #- name: ray-logs
+      #emptyDir: {}
     - name: fluentbit-config
       configMap:
         name: fluentbit-config
+    - name: gcs-fuse-csi-static
+      persistentVolumeClaim:
+        claimName: gcs-fuse-csi-static-pvc
+    #- name: gcs-fuse-csi-ephemeral
+      #csi:
+        #driver: gcsfuse.csi.storage.gke.io
+        #readOnly: true
+        #volumeAttributes:
+          #bucketName: ray-logs
+          #mountOptions: "implicit-dirs"
   # Ray writes logs to /tmp/ray/session_latests/logs
   volumeMounts:
-    - mountPath: /tmp/ray
-      name: ray-logs
+    #- mountPath: /tmp/ray
+      #name: ray-logs
+    - name: gcs-fuse-csi-static
+      mountPath: /tmp/ray
+      #readOnly: true
+    #- name: gcs-fuse-csi-ephemeral
+      #readOnly: true
+      # mountPath: /data
+  #serviceAccountName: default
   # sidecarContainers specifies additional containers to attach to the Ray pod.
   # Follows standard K8s container spec.
   sidecarContainers:
@@ -126,8 +147,8 @@ head:
           memory: 128Mi
           ephemeral-storage: 4Gi
       volumeMounts:
-      - mountPath: /tmp/ray
-        name: ray-logs
+      #- mountPath: /tmp/ray
+        #name: ray-logs
       - mountPath: /fluent-bit/etc/
         name: fluentbit-config
 
@@ -177,6 +198,7 @@ worker:
       ephemeral-storage: 10Gi
   annotations:
     key: value
+    gke-gcsfuse/volumes: "true"
   nodeSelector:
     iam.gke.io/gke-metadata-server-enabled: "true"
     cloud.google.com/gke-accelerator: "nvidia-tesla-t4"
@@ -190,10 +212,21 @@ worker:
     - name: fluentbit-config
       configMap:
         name: fluentbit-config
+    #- name: gcs-fuse-csi-ephemeral
+      #csi:
+        #driver: gcsfuse.csi.storage.gke.io
+        #readOnly: true
+        #volumeAttributes:
+          #bucketName: ray-logs
+          #mountOptions: "implicit-dirs"
   # Ray writes logs to /tmp/ray/session_latests/logs
   volumeMounts:
     - mountPath: /tmp/ray
       name: ray-logs
+    #- name: gcs-fuse-csi-ephemeral
+      #mountPath: /tmp/ray
+      #readOnly: true
+  #serviceAccountName: default
   # sidecarContainers specifies additional containers to attach to the Ray pod.
   # Follows standard K8s container spec.
   sidecarContainers:

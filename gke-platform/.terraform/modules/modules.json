@@ -1,0 +1,1 @@
+{"Modules":[{"Key":"","Source":"","Dir":"."},{"Key":"gke_autopilot","Source":"./modules/gke_autopilot","Dir":"modules/gke_autopilot"},{"Key":"gke_standard","Source":"./modules/gke_standard","Dir":"modules/gke_standard"},{"Key":"kuberay","Source":"./modules/kuberay","Dir":"modules/kuberay"},{"Key":"kubernetes","Source":"./modules/kubernetes","Dir":"modules/kubernetes"}]}
