@@ -21,8 +21,10 @@
 
 image:
   # Replace this with your own image if needed.
-  repository: rayproject/ray
-  tag: 2.6.1-py310-gpu
+  #repository: rayproject/ray
+  #tag: 2.7.0-py310-gpu
+  repository: gcr.io/ricliu-gke-dev/ray-image
+  tag: "2.7"
   pullPolicy: IfNotPresent
 
 nameOverride: "kuberay"
@@ -56,10 +58,27 @@ head:
         memory: "512Mi"
   labels:
     cloud.google.com/gke-ray-node-type: head
+  serviceAccountName: default
   rayStartParams:
     dashboard-host: '0.0.0.0'
     block: 'true'
-  # containerEnv specifies environment variables for the Ray container,
+  headService:
+      metadata:
+        name: example-cluster-head-svc
+        labels:
+          custom-label: custom-ray-head-service-label
+        annotations:
+          custom-annotation: custom-ray-head-service-annotation
+      spec:
+        type: LoadBalancer
+        ports:
+        - port: 8888
+          targetPort: 8888
+          name: grpc
+        - port: 9000
+          targetPort: 9000
+          name: esp   
+   # containerEnv specifies environment variables for the Ray container,
   # Follows standard K8s container env schema.
   containerEnv:
   # - name: EXAMPLE_ENV
@@ -103,6 +122,9 @@ head:
     - name: fluentbit-config
       configMap:
         name: fluentbit-config
+    - name: esp-ssl
+      secret:
+        secretName: esp-ssl
   # Ray writes logs to /tmp/ray/session_latests/logs
   volumeMounts:
     - mountPath: /tmp/ray
@@ -110,6 +132,23 @@ head:
   # sidecarContainers specifies additional containers to attach to the Ray pod.
   # Follows standard K8s container spec.
   sidecarContainers:
+    - name: esp
+      image: gcr.io/endpoints-release/endpoints-runtime:2
+      args: [  
+        "--listener_port=9000",
+        "--service=stable-diffusion.endpoints.ricliu-gke-dev.cloud.goog",
+        "--rollout_strategy=managed",
+        "--backend=grpc://127.0.0.1:8888",
+        "--healthz=/healthz",
+        "--ssl_server_cert_path=/etc/esp/ssl",
+        "--enable_debug",
+      ]
+      ports:
+      - containerPort: 9000
+      volumeMounts:
+      - mountPath: /etc/esp/ssl
+        name:  esp-ssl
+        readOnly: true
     - name: fluentbit
       image: fluent/fluent-bit:1.9.6
       # These resource requests for Fluent Bit should be sufficient in production.
