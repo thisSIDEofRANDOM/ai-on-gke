@@ -90,3 +90,9 @@ variable "client_secret" {
   default     = ""
   sensitive   = true
 }
+
+variable "enable_filestore_use" {
+  type        = bool
+  description = "Enables filestore storage option so that all users will share the same pv/pvc under the same namespace"
+  default     = false
+}

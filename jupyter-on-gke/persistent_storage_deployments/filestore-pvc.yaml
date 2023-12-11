@@ -1,0 +1,13 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: filestore-claim
+  namespace: <NAMESPACE>
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: filestore-pv
+  resources:
+    requests:
+      storage: 1Ti

@@ -62,7 +62,7 @@ resource "google_project_service" "project_service" {
 
 # Creates a "Brand", equivalent to the OAuth consent screen on Cloud console
 resource "google_iap_brand" "project_brand" {
-  count             = var.add_auth && var.add_auth && var.brand == "" ? 1 : 0
+  count             = var.add_auth && var.brand == "" ? 1 : 0
   support_email     = var.support_email
   application_title = "Cloud IAP protected Application"
   project           = var.project_id
@@ -105,6 +105,10 @@ module "iap_auth" {
   ]
 }
 
+resource "kubectl_manifest" "filestore_storage_class" {
+  yaml_body = templatefile("${path.module}/persistent_storage_deployments/filestore-storage-class.yaml", {})
+}
+
 module "workload_identity_service_account" {
   source = "./service_accounts_module"
 
@@ -121,11 +125,12 @@ resource "helm_release" "jupyterhub" {
   cleanup_on_fail = "true"
 
   values = [
-    templatefile("${path.module}/jupyter_config/config-selfauth.yaml", {
+    templatefile(var.enable_filestore_use ? "${path.module}/jupyter_config/config-filestore.yaml" : "${path.module}/jupyter_config/config-selfauth.yaml", {
       service_id          = var.add_auth && data.google_compute_backend_service.jupyter-ingress.generated_id != null ? "${data.google_compute_backend_service.jupyter-ingress.generated_id}" : "no-id-yet"
       project_number      = data.google_project.project.number
       authenticator_class = var.add_auth ? "'gcpiapjwtauthenticator.GCPIAPAuthenticator'" : "dummy"
       service_type        = var.add_auth ? "NodePort" : "LoadBalancer"
+      pvc_template        = var.enable_filestore_use ? "filestore-claim" : "claim-{username}"
     })
   ]
 

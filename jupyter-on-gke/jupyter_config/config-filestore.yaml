@@ -118,25 +118,10 @@ singleuser:
         storage:
           display_name: "Storage"
           choices:
-            DefaultStorage:
-              display_name: "DefaultStorage"
+            Filestore:
+              display_name: "Filestore"
               kubespawner_override:
-                default: true
-            GCSFuse:
-              display_name: "GCSFuse"
-              kubespawner_override:
-                volume_mounts:
-                - name: gcs-fuse-csi-ephemeral
-                  mountPath: /home/jovyan
-                volumes:
-                - name: gcs-fuse-csi-ephemeral
-                  csi:
-                    driver: gcsfuse.csi.storage.gke.io
-                    volumeAttributes:
-                      bucketName: gcsfuse-{username}
-                      mountOptions: "uid=1000,gid=100,o=noexec,implicit-dirs,dir-mode=777,file-mode=777"
-              node_selector:
-                iam.gke.io/gke-metadata-server-enabled: "true"
+                storage_class: "filestore-storage-class"
       default: true
     - display_name: "GPU T4"
       description: "Creates GPU VMs (T4) as the compute for notebook execution"
@@ -144,25 +129,10 @@ singleuser:
         storage:
           display_name: "Storage"
           choices:
-            DefaultStorage:
-              display_name: "DefaultStorage"
+            Filestore:
+              display_name: "Filestore"
               kubespawner_override:
-                default: true
-            GCSFuse:
-              display_name: "GCSFuse"
-              kubespawner_override:
-                volume_mounts:
-                - name: gcs-fuse-csi-ephemeral
-                  mountPath: /home/jovyan
-                volumes:
-                - name: gcs-fuse-csi-ephemeral
-                  csi:
-                    driver: gcsfuse.csi.storage.gke.io
-                    volumeAttributes:
-                      bucketName: gcsfuse-{username}
-                      mountOptions: "uid=1000,gid=100,o=noexec,implicit-dirs,dir-mode=777,file-mode=777"
-              node_selector:
-                iam.gke.io/gke-metadata-server-enabled: "true"
+                storage_class: "filestore-storage-class"
       kubespawner_override:
         image: jupyter/tensorflow-notebook:python-3.10
         extra_resource_limits:
@@ -177,25 +147,10 @@ singleuser:
         storage:
           display_name: "Storage"
           choices:
-            DefaultStorage:
-              display_name: "DefaultStorage"
+            Filestore:
+              display_name: "Filestore"
               kubespawner_override:
-                default: true
-            GCSFuse:
-              display_name: "GCSFuse"
-              kubespawner_override:
-                volume_mounts:
-                - name: gcs-fuse-csi-ephemeral
-                  mountPath: /home/jovyan
-                volumes:
-                - name: gcs-fuse-csi-ephemeral
-                  csi:
-                    driver: gcsfuse.csi.storage.gke.io
-                    volumeAttributes:
-                      bucketName: gcsfuse-{username}
-                      mountOptions: "uid=1000,gid=100,o=noexec,implicit-dirs,dir-mode=777,file-mode=777"
-              node_selector:
-                iam.gke.io/gke-metadata-server-enabled: "true"
+                storage_class: "filestore-storage-class"
       kubespawner_override:
         image: jupyter/tensorflow-notebook:python-3.10
         extra_resource_limits:
