@@ -90,6 +90,16 @@ singleuser:
     gke-gcsfuse/cpu-limit: 500m
     gke-gcsfuse/memory-limit: 250Mi
     gke-gcsfuse/ephemeral-storage-limit: 10Gi
+  extraContainers: [
+    {
+      "name": "cuda",
+      "image": "nvidia/cuda:11.0.3-base-ubi7",
+      "command": ["bash", "-c", "/usr/local/nvidia/bin/nvidia-smi -L; sleep 300"],
+      "resources": {
+        "limits": {"nvidia.com/gpu": "1"}
+      }
+    }
+  ]
   storage:
     dynamic:
       pvcNameTemplate: ${pvc_template}
@@ -166,11 +176,13 @@ singleuser:
       kubespawner_override:
         image: jupyter/tensorflow-notebook:python-3.10
         extra_resource_limits:
-          # number of gpus needed on the node
-          nvidia.com/gpu: "2"
+          # request for additional resource
+          nvidia.com/gpu: "1"
       #  possible values: nvidia-tesla-k80, nvidia-tesla-p100, nvidia-tesla-p4, nvidia-tesla-v100, nvidia-tesla-t4, nvidia-tesla-a100, nvidia-a100-80gb, nvidia-l4
         node_selector:
           cloud.google.com/gke-accelerator: "nvidia-tesla-t4"
+          cloud.google.com/gke-gpu-sharing-strategy: time-sharing
+          cloud.google.com/gke-max-shared-clients-per-gpu: "4"
     - display_name: "GPU A100"
       description: "Creates GPU VMs (A100) as the compute for notebook execution"
       profile_options:

@@ -119,7 +119,12 @@ resource "google_container_node_pool" "gpu_pool" {
 
     guest_accelerator {
       type  = var.gpu_pool_accelerator_type
-      count = 2
+      count = 1
+      # gpu_partition_size = 5
+      gpu_sharing_config {
+        gpu_sharing_strategy = "TIME_SHARING"
+        max_shared_clients_per_gpu = 4
+      }
     }
 
     # preemptible  = true

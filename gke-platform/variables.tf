@@ -65,5 +65,9 @@ variable "gpu_pool_accelerator_type" {
 variable "gpu_pool_node_locations" {
   type        = list
   description = "Specify the gpu-pool node zone locations"
-  default     = ["us-central1-a", "us-central1-c", "us-central1-f"]
+  default     = [
+    # "us-central1-a", 
+    "us-central1-c", 
+    # "us-central1-f"
+    ]
 }
