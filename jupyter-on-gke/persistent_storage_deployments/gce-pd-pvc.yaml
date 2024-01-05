@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: <NAMESPACE>
+  name: claim-{USERNAME}
+spec:
+  storageClassName: "gce-pd-storage-class"
+  volumeName: claim-{USERNAME}
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10G
