@@ -21,6 +21,7 @@ locals {
     for item in var.additional_labels :
     split("=", item)[0] => split("=", item)[1]
   })
+  image = var.enable_chat_history ? var.chat_history_image : var.base_image
 }
 
 # IAP Section: Creates the GKE components
@@ -109,7 +110,8 @@ resource "kubernetes_deployment" "rag_frontend_deployment" {
       spec {
         service_account_name = var.google_service_account
         container {
-          image = "us-central1-docker.pkg.dev/ai-on-gke/rag-on-gke/frontend@sha256:bc36e823a0110a65dae6336e3d46a03b798a6d396ba305a6590ae4bb8f895861"
+          # image = "us-central1-docker.pkg.dev/ai-on-gke/rag-on-gke/frontend@sha256:bc36e823a0110a65dae6336e3d46a03b798a6d396ba305a6590ae4bb8f895861"
+          image = local.image
           name  = "rag-frontend"
 
           port {
@@ -124,7 +126,18 @@ resource "kubernetes_deployment" "rag_frontend_deployment" {
 
           env {
             name  = "PROJECT_ID"
-            value = "projects/${var.project_id}"
+            #value = "projects/${var.project_id}"
+            value = "${var.project_id}"
+          }
+
+          env {
+            name  = "REGION"
+            value = "${var.region}"
+          }
+          
+          env {
+            name  = "INSTANCE"
+            value = "${var.cloudsql_instance}"
           }
 
           env {
@@ -142,15 +155,20 @@ resource "kubernetes_deployment" "rag_frontend_deployment" {
             value = var.dataset_embeddings_table_name
           }
 
+          env {
+            name  = "ENABLE_CHAT_HISTORY"
+            value = "${var.enable_chat_history}"
+          }
+
           resources {
             limits = {
-              cpu               = "3"
-              memory            = "3Gi"
+              cpu               = "4"
+              memory            = "8Gi"
               ephemeral-storage = "5Gi"
             }
             requests = {
-              cpu               = "3"
-              memory            = "3Gi"
+              cpu               = "4"
+              memory            = "8Gi"
               ephemeral-storage = "5Gi"
             }
           }

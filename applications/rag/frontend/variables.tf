@@ -53,6 +53,26 @@ variable "db_secret_name" {
   description = "CloudSQL user credentials"
 }
 
+variable "base_image" {
+  type        = string
+  description = "Base image for the application"
+  # This is the default used in the release-1.1 branch
+  default     = "us-central1-docker.pkg.dev/ai-on-gke/rag-on-gke/frontend@sha256:bc36e823a0110a65dae6336e3d46a03b798a6d396ba305a6590ae4bb8f895861"
+}
+
+variable "chat_history_image" {
+  type        = string
+  description = "Image that enables chat history via langchain + CloudSQL extensions"
+  # WARNING: this image is broken. Still working on a fix.
+  default     = "us-central1-docker.pkg.dev/ai-on-gke/rag-on-gke/amundson-frontend@sha256:008841782ef2ba8075782bc58cde1e6609807880337ece354b8812529f5d73d2"
+}
+
+variable "enable_chat_history" {
+  type        = bool
+  description = "enables chat history"
+  default     = false
+}
+
 variable "dataset_embeddings_table_name" {
   type        = string
   description = "Name of the table that stores vector embeddings for input dataset"
