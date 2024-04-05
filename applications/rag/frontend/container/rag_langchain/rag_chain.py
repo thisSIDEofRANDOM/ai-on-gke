@@ -41,7 +41,7 @@ chat_history_map: Dict[str, PostgresChatMessageHistory] = {}
 def get_chat_history(session_id: str) -> PostgresChatMessageHistory:
     history = None
     if session_id in chat_history_map:
-        history = chat_history_map.get(session_id)
+        history = chat_history_map[session_id]
     else:
         history = PostgresChatMessageHistory.create_sync(
             engine,
@@ -51,16 +51,14 @@ def get_chat_history(session_id: str) -> PostgresChatMessageHistory:
         chat_history_map[session_id] = history
     return history
 
+def clear_chat_history(session_id: str):
+    if session_id in chat_history_map:
+        history = chat_history_map[session_id]
+        history.clear()
+        del chat_history_map[session_id]
+
 #TODO: limit number of tokens in prompt to MAX_INPUT_LENGTH 
 # (as specified in hugging face TGI input parameter)
-# chain = setup_and_retrieval | prompt | model
-# chain_with_history = RunnableWithMessageHistory(
-#     chain,
-#     get_chat_history,
-#     input_messages_key=QUESTION,
-#     history_messages_key=HISTORY,
-#     output_messages_key="output"
-# )
 
 def create_chain() -> RunnableWithMessageHistory: 
     # TODO HuggingFaceTextGenInference class is deprecated. 
@@ -114,3 +112,9 @@ def create_chain() -> RunnableWithMessageHistory:
         output_messages_key="output"
     )
     return chain_with_history
+
+def take_chat_turn(chain: RunnableWithMessageHistory, session_id: str, query_text: str) -> str:
+    #TODO limit the number of history messages
+    config = {"configurable": {"session_id": session_id}}
+    result = chain.invoke({"question": query_text}, config)
+    return str(result)

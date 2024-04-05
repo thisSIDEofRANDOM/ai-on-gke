@@ -63,8 +63,7 @@ variable "base_image" {
 variable "chat_history_image" {
   type        = string
   description = "Image that enables chat history via langchain + CloudSQL extensions"
-  # WARNING: this image is broken. Still working on a fix.
-  default     = "us-central1-docker.pkg.dev/ai-on-gke/rag-on-gke/amundson-frontend@sha256:008841782ef2ba8075782bc58cde1e6609807880337ece354b8812529f5d73d2"
+  default     = "us-central1-docker.pkg.dev/ai-on-gke/rag-on-gke/amundson-frontend@sha256:6221bd937897d7785aae33c1ce9cff05a03601a54fa211c34c538d1eb09633a0"
 }
 
 variable "enable_chat_history" {

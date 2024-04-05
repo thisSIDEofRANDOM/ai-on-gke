@@ -2,19 +2,12 @@ import base64
 import os
 import uuid
 import langchain 
-from rag_langchain.rag_chain import create_chain
+from rag_langchain.rag_chain import create_chain, take_chat_turn
 from langchain_core.runnables.history import RunnableWithMessageHistory
 
 langchain.debug = True
 
 SESSION_ID = str(uuid.uuid4())
-
-def take_chat_turn(chain: RunnableWithMessageHistory, session_id: str, query_text: str) -> str:
-    #TODO clear chat history when session is over
-    #TODO limit the number of history messages
-    config = {"configurable": {"session_id": session_id}}
-    result = chain.invoke({"question": query_text}, config)
-    return str(result)
 
 def syncmain():
     chain_with_history = create_chain()
