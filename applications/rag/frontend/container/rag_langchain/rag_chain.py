@@ -17,7 +17,7 @@ INFERENCE_ENDPOINT=os.environ.get('INFERENCE_ENDPOINT', '127.0.0.1:8081')
 SENTENCE_TRANSFORMER_MODEL = 'intfloat/multilingual-e5-small' # Transformer to use for converting text chunks to vector embeddings
 
 
-# TODO use a chat model instead of an LLM in the chain. Convert the prompt to a chat prompot template
+# TODO use a chat model instead of an LLM in the chain. Convert the prompt to a chat prompt template
 # prompt = ChatPromptTemplate.from_messages(
 #     [
 #         ("system", """You help everyone by answering questions, and improve your answers from previous answers in history. 
@@ -37,25 +37,40 @@ History: {""" + HISTORY + "}\n\nContext: {" + CONTEXT + "}\n\nQuestion: {" + QUE
 prompt = PromptTemplate(template=template, input_variables=[HISTORY, CONTEXT, QUESTION])
 
 engine = create_sync_postgres_engine()
-chat_history_map: Dict[str, PostgresChatMessageHistory] = {}
+# TODO: Dict is not safe for multiprocessing. Introduce a cache using Flask-caching or libcache
+# The in-memory SimpleCache implementations for each of these libraries is not safe either. 
+# Consider redis or memcached (e.g., Memorystore)
+# chat_history_map: Dict[str, PostgresChatMessageHistory] = {}
+
 def get_chat_history(session_id: str) -> PostgresChatMessageHistory:
-    history = None
-    if session_id in chat_history_map:
-        history = chat_history_map[session_id]
-    else:
-        history = PostgresChatMessageHistory.create_sync(
-            engine,
-            session_id=session_id,
-            table_name = CHAT_HISTORY_TABLE_NAME
-        )
-        chat_history_map[session_id] = history
+    history = PostgresChatMessageHistory.create_sync(
+        engine,
+        session_id=session_id,
+        table_name = CHAT_HISTORY_TABLE_NAME
+    )
+    # history = None
+    # if session_id in chat_history_map:
+    #     history = chat_history_map[session_id]
+    # else:
+    #     history = PostgresChatMessageHistory.create_sync(
+    #         engine,
+    #         session_id=session_id,
+    #         table_name = CHAT_HISTORY_TABLE_NAME
+    #     )
+    #     chat_history_map[session_id] = history
+    print(f"Retrieving history for session {session_id} with {len(history.messages)} items:")
+    print("\t" + "\n\t".join([message.content for message in history.messages]))
     return history
 
 def clear_chat_history(session_id: str):
-    if session_id in chat_history_map:
-        history = chat_history_map[session_id]
-        history.clear()
-        del chat_history_map[session_id]
+    history = PostgresChatMessageHistory.create_sync(
+        engine,
+        session_id=session_id,
+        table_name = CHAT_HISTORY_TABLE_NAME
+    )    # if session_id in chat_history_map:
+    #     history = chat_history_map[session_id]
+    history.clear()
+        # del chat_history_map[session_id]
 
 #TODO: limit number of tokens in prompt to MAX_INPUT_LENGTH 
 # (as specified in hugging face TGI input parameter)
@@ -65,7 +80,7 @@ def create_chain() -> RunnableWithMessageHistory:
     # The warning is: 
     #                The class `langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference` 
     #                was deprecated in langchain-community 0.0.21 and will be removed in 0.2.0. Use HuggingFaceEndpoint instead
-    #The replacement is HuggingFace Endoint, which requires a huggingface
+    # The replacement is HuggingFace Endoint, which requires a huggingface
     # hub API token. Either need to add the token to the environment, or need to find a method to call TGI
     # without the token.
     # Example usage of HuggingFaceEndpoint:
@@ -92,16 +107,13 @@ def create_chain() -> RunnableWithMessageHistory:
     langchain_embed = HuggingFaceEmbeddings(model_name=SENTENCE_TRANSFORMER_MODEL)
     vector_store = CustomVectorStore(langchain_embed, init_connection_pool(Connector()))
     retriever = vector_store.as_retriever()
-    def get_question(question: dict) -> str:
-        return question[QUESTION]
-    question_getter = RunnableLambda(get_question)
-
-    def get_history(history: dict) -> str:
-        return history[HISTORY]
-    history_getter = RunnableLambda(get_history)
 
     setup_and_retrieval = RunnableParallel(
-        {"context": retriever, QUESTION: question_getter, HISTORY: history_getter}
+        {
+            "context": retriever, 
+            QUESTION: RunnableLambda(lambda d: d[QUESTION]), 
+            HISTORY: RunnableLambda(lambda d: d[HISTORY])
+        }
     )
     chain = setup_and_retrieval | prompt | model
     chain_with_history = RunnableWithMessageHistory(

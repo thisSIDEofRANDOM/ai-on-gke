@@ -22,16 +22,19 @@ from flask import Flask, render_template, request, jsonify, session
 from rai import dlp_filter # Google's Cloud Data Loss Prevention (DLP) API. https://cloud.google.com/security/products/dlp
 from rai import nlp_filter # https://cloud.google.com/natural-language/docs/moderating-text
 from cloud_sql import cloud_sql
-from rag_langchain.rag_chain import clear_chat_history, create_chain, take_chat_turn
+from rag_langchain.rag_chain import clear_chat_history, create_chain, take_chat_turn, engine
 from datetime import datetime, timedelta, timezone
 
 # Setup logging
 logging_client = logging.Client()
 logging_client.setup_logging()
 
+# TODO: refactor the app startup code into a flask app factory
+# TODO: include the chat history cache in the app lifecycle and ensure that it's threadsafe.
 app = Flask(__name__, static_folder='static')
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
+app.config['ENGINE'] = engine # force the connection pool to warm up eagerly
 
 SESSION_TIMEOUT_MINUTES = 30
 #TODO replace with real secret
@@ -50,6 +53,7 @@ def get_nlp_status():
 def get_dlp_status():
     dlp_enabled = dlp_filter.is_dlp_api_enabled()
     return jsonify({"dlpEnabled": dlp_enabled})
+
 @app.route('/get_inspect_templates')
 def get_inspect_templates():
     return jsonify(dlp_filter.list_inspect_templates_from_parent())
@@ -88,6 +92,7 @@ def index():
 
 @app.route('/prompt', methods=['POST'])
 def handlePrompt():
+    # TODO on page refresh, load chat history into browser.
     session['last_activity'] = datetime.now(timezone.utc) 
     data = request.get_json()
     warnings = []
@@ -102,6 +107,8 @@ def handlePrompt():
         response = {}
         result = take_chat_turn(llm_chain, session['session_id'], user_prompt)
         response['text'] = result
+
+        # TODO: enable filtering in chain
         if 'nlpFilterLevel' in data:
             if nlp_filter.is_content_inappropriate(response['text'], data['nlpFilterLevel']):
                 response['text'] = 'The response is deemed inappropriate for display.'
@@ -131,4 +138,6 @@ def handlePrompt():
 
 
 if __name__ == '__main__':
+    # TODO using gunicorn to start the server results in the first request being really slow.
+    # Sometimes, the worker thread has to restart due to an unknown error.
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
