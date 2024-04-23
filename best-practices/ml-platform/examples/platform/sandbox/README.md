@@ -44,7 +44,9 @@ The default quota given to a project should be sufficient for this guide.
   ```
   export MLP_BASE_DIR=$(pwd) && \
   echo "export MLP_BASE_DIR=${MLP_BASE_DIR}" >> ${HOME}/.bashrc
+  ```
 
+  ```
   cd examples/platform/sandbox && \
   export MLP_TYPE_BASE_DIR=$(pwd) && \
   echo "export MLP_TYPE_BASE_DIR=${MLP_TYPE_BASE_DIR}" >> ${HOME}/.bashrc
@@ -143,6 +145,7 @@ You only need to complete the section for the option that you have selected (eit
 - Authorize `gcloud`
 
   ```
+  export GOOGLE_APPLICATION_CREDENTIALS=${CLOUDSDK_CONFIG:-${HOME}/.config/gcloud}/application_default_credentials.json
   gcloud auth login --activate --no-launch-browser --quiet --update-adc
   ```
 
@@ -191,6 +194,7 @@ You can now deploy the platform with Terraform in the [next section](#run-terraf
 - Authorize `gcloud`
 
   ```
+  export GOOGLE_APPLICATION_CREDENTIALS=${CLOUDSDK_CONFIG:-${HOME}/.config/gcloud}/application_default_credentials.json
   gcloud auth login --activate --no-launch-browser --quiet --update-adc
   ```
 
@@ -241,7 +245,23 @@ Before running Terraform, make sure that the Service Usage API is enable.
 
   ```
   MLP_PROJECT_ID=$(grep environment_project_id ${MLP_TYPE_BASE_DIR}/mlp.auto.tfvars | awk -F"=" '{print $2}' | xargs)
-  gcloud endpoints services undelete ray-dashboard.ml-team.mlp.endpoints.${MLP_PROJECT_ID}.cloud.goog --quiet
+  gcloud endpoints services undelete ray-dashboard.ml-team.mlp.endpoints.${MLP_PROJECT_ID}.cloud.goog --quiet 2>/dev/null
+  ```
+
+- Set the IAP allow domain
+
+  ```
+  IAP_DOMAIN=$(gcloud auth list --filter=status:ACTIVE --format="value(account)" | awk -F@ '{print $2}')
+  echo "IAP_DOMAIN=${IAP_DOMAIN}"
+  ```
+
+  **NOTE: Since IAP is configured for internal users, the `IAP_DOMAIN` must match the domain of the `MLP_PROJECT_ID`.**
+  **If it does not match, set `IAP_DOMAIN` to the proper value before proceeding.**
+
+- Set the IAP domain in the configuration file
+
+  ```
+  sed -i '/^iap_domain[[:blank:]]*=/{h;s/=.*/= "'"${IAP_DOMAIN}"'"/};${x;/^$/{s//iap_domain             = "'"${IAP_DOMAIN}"'"/;H};x}' ${MLP_TYPE_BASE_DIR}/mlp.auto.tfvars
   ```
 
 - Create the resources
